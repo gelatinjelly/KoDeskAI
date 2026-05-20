@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>데스크탑 AI 비서</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@300;400;500;600&display=swap"
+          rel="stylesheet">
+    <style>
+        :root {
+          --bg:       #0C0E14;
+          --surface:  #13161F;
+          --border:   #1E2535;
+          --accent:   #00D4AA;
+          --accent2:  #3B82F6;
+          --warn:     #F59E0B;
+          --text:     #E2E8F0;
+          --muted:    #64748B;
+          --user-bg:  #1A2235;
+          --ai-bg:    #111827;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+          background: var(--bg);
+          color: var(--text);
+          font-family: 'IBM Plex Sans KR', sans-serif;
+          height: 100vh;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+
+        /* ── 헤더 ── */
+        header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 14px 24px;
+          background: var(--surface);
+          border-bottom: 1px solid var(--border);
+          flex-shrink: 0;
+        }
+
+        .logo {
+          width: 32px; height: 32px;
+          background: linear-gradient(135deg, var(--accent), var(--accent2));
+          border-radius: 8px;
+          display: flex; align-items: center; justify-content: center;
+          font-family: 'IBM Plex Mono', monospace;
+          font-size: 14px; font-weight: 600;
+          color: #000;
+        }
+
+        .header-title {
+          font-size: 15px;
+          font-weight: 600;
+          letter-spacing: -0.3px;
+        }
+
+        .header-sub {
+          font-size: 11px;
+          color: var(--muted);
+          font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .status-dot {
+          width: 7px; height: 7px;
+          background: var(--accent);
+          border-radius: 50%;
+          margin-left: auto;
+          box-shadow: 0 0 8px var(--accent);
+          animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+
+        /* ── 탭 ── */
+        .tabs {
+          display: flex;
+          gap: 4px;
+          padding: 10px 24px 0;
+          background: var(--surface);
+          border-bottom: 1px solid var(--border);
+          flex-shrink: 0;
+        }
+
+        .tab {
+          padding: 8px 18px;
+          font-size: 12px;
+          font-family: 'IBM Plex Mono', monospace;
+          color: var(--muted);
+          cursor: pointer;
+          border-radius: 6px 6px 0 0;
+          border: 1px solid transparent;
+          border-bottom: none;
+          transition: all 0.2s;
+          background: transparent;
+        }
+
+        .tab.active {
+          color: var(--accent);
+          background: var(--bg);
+          border-color: var(--border);
+        }
+
+        /* ── 패널 ── */
+        .panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+        .panel.active { display: flex; }
+
+        /* ── 채팅 패널 ── */
+        #chat-messages {
+          flex: 1;
+          overflow-y: auto;
+          padding: 20px 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          scrollbar-width: thin;
+          scrollbar-color: var(--border) transparent;
+        }
+
+        .msg {
+          display: flex;
+          gap: 12px;
+          animation: fadeUp 0.25s ease;
+        }
+
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .msg-avatar {
+          width: 30px; height: 30px;
+          border-radius: 8px;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 12px; font-weight: 700;
+          flex-shrink: 0;
+          font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .msg.user .msg-avatar { background: var(--accent2); color: #fff; }
+        .msg.ai   .msg-avatar { background: linear-gradient(135deg, var(--accent), #065A82); color: #000; }
+
+        .msg-body { flex: 1; }
+
+        .msg-name {
+          font-size: 11px;
+          font-family: 'IBM Plex Mono', monospace;
+          color: var(--muted);
+          margin-bottom: 5px;
+        }
+
+        .msg-text {
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 4px 12px 12px 12px;
+          padding: 11px 15px;
+          font-size: 13.5px;
+          line-height: 1.65;
+          white-space: pre-wrap;
+        }
+
+        .msg.user .msg-text {
+          background: var(--user-bg);
+          border-color: #1E3A5F;
+          border-radius: 12px 4px 12px 12px;
+        }
+
+        .typing-indicator {
+          display: flex; gap: 4px; padding: 11px 15px;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 4px 12px 12px 12px;
+          width: fit-content;
+        }
+
+        .typing-indicator span {
+          width: 6px; height: 6px;
+          background: var(--muted);
+          border-radius: 50%;
+          animation: bounce 1.2s infinite;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+          0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+          40% { transform: translateY(-6px); opacity: 1; }
+        }
+
+        /* ── 채팅 입력 ── */
+        .chat-input-area {
+          padding: 16px 24px;
+          background: var(--surface);
+          border-top: 1px solid var(--border);
+          display: flex;
+          gap: 10px;
+          flex-shrink: 0;
+        }
+
+        #messageInput {
+          flex: 1;
+          background: var(--bg);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          padding: 10px 14px;
+          color: var(--text);
+          font-family: 'IBM Plex Sans KR', sans-serif;
+          font-size: 13.5px;
+          outline: none;
+          transition: border-color 0.2s;
+        }
+
+        #messageInput:focus { border-color: var(--accent); }
+        #messageInput::placeholder { color: var(--muted); }
+
+        .btn {
+          padding: 10px 18px;
+          border-radius: 8px;
+          border: none;
+          font-family: 'IBM Plex Mono', monospace;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-primary {
+          background: var(--accent);
+          color: #000;
+        }
+        .btn-primary:hover { background: #00EBBB; transform: translateY(-1px); }
+        .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        /* ── 파일 패널 ── */
+        #file-panel {
+          padding: 24px;
+          overflow-y: auto;
+          gap: 20px;
+        }
+
+        .drop-zone {
+          border: 2px dashed var(--border);
+          border-radius: 12px;
+          padding: 48px 24px;
+          text-align: center;
+          cursor: pointer;
+          transition: all 0.2s;
+          background: var(--surface);
+          position: relative;
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+          border-color: var(--accent);
+          background: #0D1F1A;
+        }
+
+        .drop-zone input[type="file"] {
+          position: absolute; inset: 0;
+          opacity: 0; cursor: pointer;
+        }
+
+        .drop-icon {
+          font-size: 36px;
+          margin-bottom: 12px;
+        }
+
+        .drop-title {
+          font-size: 15px;
+          font-weight: 600;
+          margin-bottom: 6px;
+        }
+
+        .drop-sub {
+          font-size: 12px;
+          color: var(--muted);
+          font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .file-types {
+          display: flex;
+          gap: 8px;
+          justify-content: center;
+          margin-top: 16px;
+          flex-wrap: wrap;
+        }
+
+        .file-badge {
+          padding: 3px 10px;
+          border-radius: 20px;
+          font-size: 10px;
+          font-family: 'IBM Plex Mono', monospace;
+          font-weight: 600;
+        }
+
+        .badge-pdf  { background: #3F1515; color: #F87171; border: 1px solid #7F1D1D; }
+        .badge-word { background: #0F2340; color: #60A5FA; border: 1px solid #1E3A8A; }
+        .badge-excel{ background: #0F2A1A; color: #4ADE80; border: 1px solid #14532D; }
+        .badge-txt  { background: #1F1F0F; color: #FCD34D; border: 1px solid #713F12; }
+
+        /* 질문 입력 */
+        .question-area {
+          display: flex;
+          gap: 10px;
+          margin-top: 4px;
+        }
+
+        #questionInput {
+          flex: 1;
+          background: var(--bg);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          padding: 10px 14px;
+          color: var(--text);
+          font-family: 'IBM Plex Sans KR', sans-serif;
+          font-size: 13px;
+          outline: none;
+          transition: border-color 0.2s;
+        }
+        #questionInput:focus { border-color: var(--accent2); }
+        #questionInput::placeholder { color: var(--muted); }
+
+        .btn-blue {
+          background: var(--accent2);
+          color: #fff;
+        }
+        .btn-blue:hover { background: #60A5FA; transform: translateY(-1px); }
+        .btn-blue:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        /* 파일 결과 */
+        .file-result {
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          overflow: hidden;
+          display: none;
+        }
+
+        .file-result.show { display: block; animation: fadeUp 0.3s ease; }
+
+        .result-header {
+          padding: 12px 16px;
+          background: var(--bg);
+          border-bottom: 1px solid var(--border);
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .result-filename {
+          font-family: 'IBM Plex Mono', monospace;
+          font-size: 12px;
+          color: var(--accent);
+        }
+
+        .result-body { padding: 16px; }
+
+        .result-section {
+          margin-bottom: 16px;
+        }
+
+        .result-label {
+          font-size: 10px;
+          font-family: 'IBM Plex Mono', monospace;
+          color: var(--muted);
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          margin-bottom: 8px;
+        }
+
+        .result-text {
+          font-size: 13px;
+          line-height: 1.7;
+          white-space: pre-wrap;
+          color: var(--text);
+        }
+
+        .result-preview {
+          font-size: 12px;
+          color: var(--muted);
+          font-family: 'IBM Plex Mono', monospace;
+          background: var(--bg);
+          border: 1px solid var(--border);
+          border-radius: 6px;
+          padding: 10px 12px;
+          max-height: 100px;
+          overflow-y: auto;
+          white-space: pre-wrap;
+        }
+
+        /* 로딩 */
+        .loading-bar {
+          height: 2px;
+          background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent));
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite;
+          border-radius: 2px;
+          display: none;
+        }
+
+        .loading-bar.show { display: block; }
+
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+
+        /* 안내 메시지 */
+        .empty-state {
+          text-align: center;
+          padding: 60px 24px;
+          color: var(--muted);
+        }
+
+        .empty-icon { font-size: 32px; margin-bottom: 12px; }
+        .empty-title { font-size: 14px; margin-bottom: 6px; }
+        .empty-sub { font-size: 12px; font-family: 'IBM Plex Mono', monospace; }
+    </style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<header>
+    <div class="logo">AI</div>
+    <div>
+        <div class="header-title">데스크탑 AI 비서</div>
+        <div class="header-sub">desktop-v7 · Llama 3.1 8B</div>
+    </div>
+    <div class="status-dot"></div>
+</header>
+
+<!-- 탭 -->
+<div class="tabs">
+    <button class="tab active" onclick="switchTab('chat')">💬 채팅</button>
+    <button class="tab" onclick="switchTab('file')">📎 파일 분석</button>
+</div>
+
+<!-- 채팅 패널 -->
+<div class="panel active" id="chat-panel">
+    <div id="chat-messages">
+        <div class="msg ai">
+            <div class="msg-avatar">AI</div>
+            <div class="msg-body">
+                <div class="msg-name">desktop-v7</div>
+                <div class="msg-text">안녕하세요! 저는 데스크탑 AI 비서입니다. 컴퓨터 오류 해결, 업무 요약, 코드 디버깅 등 무엇이든 도와드릴게요. 무엇이 필요하신가요?</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-input-area">
+        <input id="messageInput" onkeydown="if(event.key==='Enter') sendMessage()" placeholder="질문을 입력하세요..."
+               type="text">
+        <button class="btn btn-primary" id="sendBtn" onclick="sendMessage()">전송</button>
+    </div>
+</div>
+
+<!-- 파일 패널 -->
+<div class="panel" id="file-panel">
+    <!-- 드롭존 -->
+    <div class="drop-zone" id="dropZone">
+        <input accept=".pdf,.docx,.doc,.xlsx,.xls,.txt" id="fileInput" onchange="onFileSelect(this)" type="file">
+        <div class="drop-icon">📄</div>
+        <div class="drop-title">파일을 드래그하거나 클릭해서 업로드</div>
+        <div class="drop-sub">PDF, Word, Excel, TXT 지원</div>
+        <div class="file-types">
+            <span class="file-badge badge-pdf">PDF</span>
+            <span class="file-badge badge-word">DOCX</span>
+            <span class="file-badge badge-excel">XLSX</span>
+            <span class="file-badge badge-txt">TXT</span>
+        </div>
+    </div>
+
+    <!-- 질문 입력 -->
+    <div class="question-area">
+        <input id="questionInput" placeholder="파일에 대한 질문 (기본: 요약해줘)" type="text">
+        <button class="btn btn-blue" disabled id="analyzeBtn" onclick="analyzeFile()">분석</button>
+    </div>
+
+    <!-- 로딩 -->
+    <div class="loading-bar" id="loadingBar"></div>
+
+    <!-- 결과 -->
+    <div class="file-result" id="fileResult">
+        <div class="result-header">
+            <span>📄</span>
+            <span class="result-filename" id="resultFilename"></span>
+        </div>
+        <div class="result-body">
+            <div class="result-section">
+                <div class="result-label">AI 분석 결과</div>
+                <div class="result-text" id="resultSummary"></div>
+            </div>
+            <div class="result-section">
+                <div class="result-label">원문 미리보기</div>
+                <div class="result-preview" id="resultPreview"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentTab = 'chat';
+    let selectedFile = null;
+    let isLoading = false;
+
+    // ── 탭 전환 ──
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab').forEach((t, i) => {
+        t.classList.toggle('active', (i === 0 && tab === 'chat') || (i === 1 && tab === 'file'));
+      });
+      document.getElementById('chat-panel').classList.toggle('active', tab === 'chat');
+      document.getElementById('file-panel').classList.toggle('active', tab === 'file');
+    }
+
+    // ── 채팅 ──
+    function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const message = input.value.trim();
+      if (!message || isLoading) return;
+
+      addMessage('user', message);
+      input.value = '';
+      isLoading = true;
+      document.getElementById('sendBtn').disabled = true;
+
+      // AI 타이핑 표시
+      const typingId = addTyping();
+
+      const eventSource = new EventSource(
+        `http://localhost:8080/ask-stream?message=${encodeURIComponent(message)}`
+      );
+
+      let aiText = '';
+      let aiMsgEl = null;
+
+      eventSource.onmessage = (event) => {
+        if (!aiMsgEl) {
+          removeTyping(typingId);
+          aiMsgEl = addMessage('ai', '');
+        }
+        aiText += event.data;
+        aiMsgEl.querySelector('.msg-text').innerText = addSpaces(aiText);
+        scrollToBottom();
+      };
+
+      eventSource.onerror = () => {
+        eventSource.close();
+        if (!aiMsgEl) removeTyping(typingId);
+        isLoading = false;
+        document.getElementById('sendBtn').disabled = false;
+        saveChatHistory();
+      };
+    }
+
+    function addMessage(role, text) {
+      const container = document.getElementById('chat-messages');
+      const el = document.createElement('div');
+      el.className = `msg ${role}`;
+      el.innerHTML = `
+        <div class="msg-avatar">${role === 'user' ? 'ME' : 'AI'}</div>
+        <div class="msg-body">
+          <div class="msg-name">${role === 'user' ? '나' : 'desktop-v7'}</div>
+          <div class="msg-text">${text}</div>
+        </div>
+      `;
+      container.appendChild(el);
+      scrollToBottom();
+      return el;
+    }
+
+    function addTyping() {
+      const container = document.getElementById('chat-messages');
+      const el = document.createElement('div');
+      el.className = 'msg ai';
+      el.id = 'typing-' + Date.now();
+      el.innerHTML = `
+        <div class="msg-avatar">AI</div>
+        <div class="msg-body">
+          <div class="msg-name">desktop-v7</div>
+          <div class="typing-indicator"><span></span><span></span><span></span></div>
+        </div>
+      `;
+      container.appendChild(el);
+      scrollToBottom();
+      return el.id;
+    }
+
+    function removeTyping(id) {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    }
+
+    function scrollToBottom() {
+      const container = document.getElementById('chat-messages');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // ── 파일 분석 ──
+    const dropZone = document.getElementById('dropZone');
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file) setFile(file);
+    });
+
+    function onFileSelect(input) {
+      if (input.files[0]) setFile(input.files[0]);
+    }
+
+    function setFile(file) {
+      selectedFile = file;
+      document.getElementById('analyzeBtn').disabled = false;
+      document.querySelector('.drop-title').innerText = `선택된 파일: ${file.name}`;
+      document.querySelector('.drop-sub').innerText = `${(file.size / 1024).toFixed(1)} KB`;
+    }
+
+    async function analyzeFile() {
+    if (!selectedFile || isLoading) return;
+
+    isLoading = true;
+    document.getElementById('analyzeBtn').disabled = true;
+    document.getElementById('loadingBar').classList.add('show');
+    document.getElementById('fileResult').classList.remove('show');
+
+    const question = document.getElementById('questionInput').value.trim() || '이 문서의 핵심 내용을 요약해줘';
+
+    try {
+        // 1. 미리보기 먼저 가져오기
+        const previewFormData = new FormData();
+        previewFormData.append('file', selectedFile);
+        const previewRes = await fetch('http://localhost:8080/analyze-file', {
+            method: 'POST',
+            body: previewFormData
+        });
+        const previewData = await previewRes.json();
+
+        // 2. 결과 박스 표시
+        document.getElementById('loadingBar').classList.remove('show');
+        document.getElementById('resultFilename').innerText = selectedFile.name;
+        document.getElementById('resultSummary').innerText = '';
+        document.getElementById('resultPreview').innerText = previewData.text_preview || '';
+        document.getElementById('fileResult').classList.add('show');
+
+        // 3. 스트리밍 분석
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        formData.append('question', question);
+
+        const res = await fetch('http://localhost:8000/ask-with-file-stream', {
+            method: 'POST',
+            body: formData
+        });
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let resultText = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const token = line.slice(6);
+                    resultText += token;
+                    document.getElementById('resultSummary').innerText = addSpaces(resultText);
+                }
+            }
+        }
+
+    } catch (e) {
+        alert('파일 분석 중 오류가 발생했습니다: ' + e.message);
+    } finally {
+        isLoading = false;
+        document.getElementById('analyzeBtn').disabled = false;
+        document.getElementById('loadingBar').classList.remove('show');
+    }
+}
+
+// ── 채팅 기록 저장 ──
+const CHAT_KEY = 'desktop_ai_chat_history';
+
+function saveChatHistory() {
+    const messages = [];
+    document.querySelectorAll('.msg').forEach(el => {
+        const role = el.classList.contains('user') ? 'user' : 'ai';
+        const text = el.querySelector('.msg-text')?.innerText || '';
+        if (text) messages.push({ role, text });
+    });
+    sessionStorage.setItem(CHAT_KEY, JSON.stringify(messages));
+}
+
+function loadChatHistory() {
+    const saved = sessionStorage.getItem(CHAT_KEY);
+    if (!saved) return;
+    const messages = JSON.parse(saved);
+    const container = document.getElementById('chat-messages');
+    container.innerHTML = '';
+    messages.forEach(m => addMessage(m.role, m.text));
+}
+
+// 페이지 로드 시 기록 복원
+window.addEventListener('load', loadChatHistory);
+
+    // ── 띄어쓰기 후처리 함수 추가 ──
+    function addSpaces(text) {
+    // 문장 부호 뒤 공백
+        text = text.replace(/([.!?,;:])([^\s\d\n])/g, '$1 $2');
+        // 숫자+점 뒤 공백 (목록)
+        text = text.replace(/(\d\.)([^\s\d])/g, '$1 $2');
+        // 한글/영문 사이 공백
+        text = text.replace(/([\uAC00-\uD7A3])([a-zA-Z])/g, '$1 $2');
+        text = text.replace(/([a-zA-Z])([\uAC00-\uD7A3])/g, '$1 $2');
+        return text;
+    }
+
+</script>
+</body>
+</html>

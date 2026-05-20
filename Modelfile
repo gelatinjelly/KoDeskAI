@@ -1,0 +1,7 @@
+FROM models/v7_q4.gguf
+TEMPLATE "{{ .Prompt }}"
+PARAMETER stop "<|end_of_text|>"
+PARAMETER stop "###"
+PARAMETER temperature 0.7
+PARAMETER num_gpu 999
+PARAMETER num_ctx 2048

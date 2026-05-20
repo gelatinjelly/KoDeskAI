@@ -1,0 +1,13 @@
+spring:
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        model: desktop-v7
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+#  application:
+#    name: llama-server
