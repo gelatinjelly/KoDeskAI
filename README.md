@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # KoDeskAI 🤖
 
 > 완전 오프라인으로 동작하는 한국어 특화 데스크탑 AI 비서
@@ -11,7 +10,10 @@ Llama 3.1 8B 모델을 한국어 데이터로 파인튜닝하여 한국어 응�
 ## 주요 기능
 
 - 💬 **실시간 스트리밍 채팅** - 답변이 실시간으로 스트리밍됩니다
-- 📎 **파일 분석** - PDF, Word, Excel, TXT 파일 요약 및 질의응답
+- 📁 **채팅방 분리** - 여러 대화방을 독립적으로 관리, 대화 내용 자동 저장
+- 🧠 **대화 기억** - 최근 30개 메시지 컨텍스트 유지
+- 📎 **파일 분석** - 채팅창에서 바로 PDF, Word, Excel, TXT 파일 첨부 및 질의응답
+- ✏️ **한국어 띄어쓰기 교정** - Kiwipiepy 기반 자동 교정
 - 🔒 **완전 오프라인 동작** - 개인정보가 외부로 전송되지 않습니다
 - ⚡ **GPU 가속 지원** - NVIDIA RTX GPU로 빠른 응답 속도
 
@@ -48,7 +50,8 @@ install.bat 더블클릭 → 우클릭 → 관리자 권한으로 실행
 설치 스크립트가 자동으로 다음을 수행합니다:
 - Ollama 설치
 - Java 17 설치
-- Python 설치 및 라이브러리 설치
+- Python 설치 및 가상환경(venv) 생성
+- Python 라이브러리 설치 (FastAPI, Kiwipiepy 등)
 - AI 모델 다운로드 (약 4.5GB, 시간이 걸립니다)
 - Ollama에 모델 등록
 
@@ -73,11 +76,13 @@ http://localhost:8080
 ### 채팅
 - 하단 입력창에 질문을 입력하고 Enter 또는 전송 버튼 클릭
 - AI가 실시간으로 답변을 스트리밍합니다
+- 좌측 사이드바에서 새 대화방 생성 및 이전 대화 불러오기 가능
+- 대화 주제에 따라 방 이름이 자동으로 설정됩니다
 
 ### 파일 분석
-- 상단 **📎 파일 분석** 탭 클릭
-- PDF, Word, Excel, TXT 파일 업로드
-- 질문 입력 후 **분석** 버튼 클릭
+- 입력창 왼쪽 📎 버튼으로 파일 첨부
+- PDF, Word, Excel, TXT 파일 지원
+- 파일 첨부 후 질문 입력하면 채팅창에서 바로 분석 결과 확인
 
 ## 종료 방법
 
@@ -91,7 +96,7 @@ http://localhost:8080
 | 양자화 | q4_k_m (4.5GB) |
 | 추론 엔진 | Ollama |
 | 백엔드 | Spring Boot 4.0 |
-| 파일 분석 | Python FastAPI |
+| 파일 분석 | Python FastAPI + Kiwipiepy |
 | 프론트엔드 | HTML/CSS/JavaScript |
 
 ## 학습 데이터
@@ -110,7 +115,3 @@ http://localhost:8080
 ## 문의
 
 - GitHub Issues: [KoDeskAI Issues](https://github.com/gelatinjelly/KoDeskAI/issues)
-=======
-# KoDeskAI
-오프라인으로 동작하는 한국어 특화 로컬 AI 비서
->>>>>>> ce3eb8e30b2e968aba6437b5302111aec706c288
