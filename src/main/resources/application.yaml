@@ -9,5 +9,7 @@ spring:
     multipart:
       max-file-size: 50MB
       max-request-size: 50MB
+server:
+  max-http-request-header-size: 1MB
 #  application:
 #    name: llama-server

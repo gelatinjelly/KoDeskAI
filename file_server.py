@@ -8,6 +8,9 @@ import requests
 import tempfile
 import os
 import json
+from kiwipiepy import Kiwi
+
+kiwi = Kiwi()
 
 app = FastAPI()
 
@@ -155,6 +158,19 @@ async def ask_with_file(
         return {"filename": file.filename, "question": question, "answer": answer}
     finally:
         os.unlink(tmp_path)
+
+# ── 띄어쓰기 교정 ──────────────────────────
+
+@app.post("/correct")
+async def correct_text(data: dict):
+    text = data.get("text", "")
+    if not text:
+        return {"corrected": text}
+    try:
+        result = kiwi.space(text)
+        return {"corrected": result}
+    except Exception:
+        return {"corrected": text}
 
 @app.get("/health")
 def health():

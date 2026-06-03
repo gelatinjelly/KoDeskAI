@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # KoDeskAI 🤖
 
 > 완전 오프라인으로 동작하는 한국어 특화 데스크탑 AI 비서
@@ -109,3 +110,7 @@ http://localhost:8080
 ## 문의
 
 - GitHub Issues: [KoDeskAI Issues](https://github.com/gelatinjelly/KoDeskAI/issues)
+=======
+# KoDeskAI
+오프라인으로 동작하는 한국어 특화 로컬 AI 비서
+>>>>>>> ce3eb8e30b2e968aba6437b5302111aec706c288
